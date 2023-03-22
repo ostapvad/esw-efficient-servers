@@ -5,7 +5,7 @@
 #include <vector>
 #include "measurementinfo.h"
 #include "datatype.h"
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include "jsonserializable.h"
 
 class Dataset : public JsonSerializable

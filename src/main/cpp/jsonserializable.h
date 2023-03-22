@@ -1,7 +1,7 @@
 #ifndef JSONSERIALIZABLE_H
 #define JSONSERIALIZABLE_H
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 
 class JsonSerializable
 {

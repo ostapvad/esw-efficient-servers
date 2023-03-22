@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include "jsonserializable.h"
 
 class MeasurementInfo : public JsonSerializable
