@@ -7,5 +7,6 @@ mkShell {
 		boost
 		jsoncpp
 		jdk17
+		maven
 	];
 }
