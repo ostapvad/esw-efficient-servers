@@ -6,5 +6,6 @@ mkShell {
 		ninja
 		boost
 		jsoncpp
+		jdk17
 	];
 }
