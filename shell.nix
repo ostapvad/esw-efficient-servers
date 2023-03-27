@@ -8,5 +8,7 @@ mkShell {
 		jsoncpp
 		jdk17
 		maven
+        protobuf
+        avro-cpp
 	];
 }
