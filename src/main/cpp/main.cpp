@@ -53,16 +53,37 @@ void processJSON(tcp::iostream& stream){
 void processAvro(tcp::iostream& stream){
     throw std::logic_error("TODO: Implement avro");
 }
+int32_t read_int32(tcp::iostream& stream) {
+    int32_t value = 0;
+    uint8_t byte;
 
+    // Read the four bytes of the integer value in network byte order
+    for (int i = 0; i < 4; i++) {
+        if (!stream.read((char*)&byte, 1)) {
+            // Handle error
+            throw std::runtime_error("Error reading int32_t value from stream");
+        }
+        value |= ((int32_t)byte << (8 * i));
+    }
+
+    // Convert the integer value to host byte order
+    return ntohl(value);
+}
 void processProtobuf(tcp::iostream& stream){
     // Nepravilno jobanije volki
+    printf("Allo\n");
     string s;
-    getline(stream, s, '\0');
+    int32_t messageSize = read_int32(stream);
+    char *buffer = new char[messageSize];
+    stream.read(buffer, messageSize);
+    //std::cout << value << std::endl;
+    //getline(stream, s, '\0');
     esw::PDatasets receivedDatasets;
 
+   // std::cout << s << std::endl;
     //esw::PDatasets receiverd_datasets;
 
-    if (!receivedDatasets.ParseFromString(s)) {
+    if (!receivedDatasets.ParseFromArray(buffer, messageSize)) {
         std::cerr << "Padlo\n";
 
     }
