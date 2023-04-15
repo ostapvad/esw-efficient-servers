@@ -4,7 +4,7 @@
 
 #include "dataset.h"
 #include "result.h"
-
+#include "measurements.pb.h"
 #include <boost/asio.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -55,6 +55,33 @@ void processAvro(tcp::iostream& stream){
 }
 
 void processProtobuf(tcp::iostream& stream){
+    // Nepravilno jobanije volki
+    string s;
+    getline(stream, s, '\0');
+    esw::PDatasets receivedDatasets;
+
+    //esw::PDatasets receiverd_datasets;
+
+    if (!receivedDatasets.ParseFromString(s)) {
+        std::cerr << "Padlo\n";
+
+    }
+    for (auto dataset : receivedDatasets.dataset()){
+            std::cout << "Measurement Info: " << dataset.info().measurername() << std::endl;
+    }
+
+   
+    std::cout<< s << std::endl;
+  // Handle parsing error
+//   std::cerr << "Error parsing input string" << std::endl;
+//   return;
+// }
+
+
+
+    // int messageSize = readAndDecodeMessageSize(stream)
+    // int message_size = tcp::iostream::read_int32(stream);
+    
     throw std::logic_error("TODO: Implement protobuf");
 }
 

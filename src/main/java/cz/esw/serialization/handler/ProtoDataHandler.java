@@ -1,17 +1,14 @@
 package cz.esw.serialization.handler;
 
+import com.google.protobuf.Descriptors;
 import cz.esw.serialization.ResultConsumer;
 import cz.esw.serialization.json.DataType;
-import cz.esw.serialization.proto.PDataset;
-import cz.esw.serialization.proto.PMeasurementInfo;
-import cz.esw.serialization.proto.PRecord;
-import cz.esw.serialization.proto.PResults;
+import cz.esw.serialization.proto.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Marek Cuchý (CVUT)
@@ -39,7 +36,18 @@ public class ProtoDataHandler implements DataHandler {
                 .setTimestamp(timestamp)
                 .setMeasurerName(measurerName);
 
-        datasets.put(datasetId, PDataset.newBuilder().setInfo(info).build());
+        List<PRecord> records = new ArrayList<>();
+        for(Descriptors.EnumValueDescriptor padlo: PDataType.getDescriptor().getValues()){
+            PRecord record = PRecord.newBuilder()
+                    .setDatatype(PDataType.valueOf(padlo))
+                    .addAllValues(Collections.emptyList())
+                    .build();
+            records.add(record);
+
+        }
+
+
+        datasets.put(datasetId, PDataset.newBuilder().setInfo(info).addAllRecords(records).build());
     }
 
     @Override
@@ -50,21 +58,31 @@ public class ProtoDataHandler implements DataHandler {
         }
 
         PRecord pRecord = dataset.getRecords(type.getNumber());
-
+        System.out.println("gnida");
         datasets.put(datasetId, dataset.toBuilder().addRecords(type.getNumber(), pRecord).build());
     }
 
     @Override
     public void getResults(ResultConsumer consumer) throws IOException {
-//        AtomicInteger msgSize = new AtomicInteger();
-        datasets.forEach((a, dataset) -> {
-            try {
-                dataset.writeDelimitedTo(outputStream);
-//                msgSize.addAndGet(dataset.getSerializedSize());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        PDatasets datasetToSend = PDatasets.newBuilder().addAllDataset(datasets.values()).build();
+        for (PDataset dataset : datasetToSend.getDatasetList()){
+            System.out.println(dataset.getInfo().getMeasurerName());
+        }
+        datasetToSend.writeTo(this.outputStream);
+        this.outputStream.write(0);
+        this.outputStream.flush();
+//
+//        //        AtomicInteger msgSize = new AtomicInteger();
+//        System.out.println("mraz");
+//        datasets.forEach((a, dataset) -> {
+//            try {
+//                dataset.writeDelimitedTo(outputStream);
+//                System.out.println("TVAR");
+////                msgSize.addAndGet(dataset.getSerializedSize());
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
 //        new DataOutputStream(outputStream).writeInt(msgSize.intValue());
 
 
