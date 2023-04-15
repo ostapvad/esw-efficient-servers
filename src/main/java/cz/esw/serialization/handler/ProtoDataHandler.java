@@ -34,16 +34,12 @@ public class ProtoDataHandler implements DataHandler {
 
     @Override
     public void handleNewDataset(int datasetId, long timestamp, String measurerName) {
-        PMeasurementInfo.Builder newDataset = PMeasurementInfo.newBuilder()
+        var info = PMeasurementInfo.newBuilder()
                 .setId(datasetId)
                 .setTimestamp(timestamp)
                 .setMeasurerName(measurerName);
 
-        PDataset.Builder datasetBuilder = PDataset.newBuilder();
-        datasetBuilder.setInfo(newDataset);
-//        Map<DataType, List<Double>> records = new EnumMap<>(DataType.class);
-
-        datasets.put(datasetId, datasetBuilder.build());
+        datasets.put(datasetId, PDataset.newBuilder().setInfo(info).build());
     }
 
     @Override
@@ -53,9 +49,9 @@ public class ProtoDataHandler implements DataHandler {
             throw new IllegalArgumentException("Dataset with id " + datasetId + " not initialized.");
         }
 
-        PRecord pRecord = dataset.getRecords(type.getType());
+        PRecord pRecord = dataset.getRecords(type.getNumber());
 
-        datasets.put(datasetId, dataset.toBuilder().addRecords(type.getType(), pRecord).build());
+        datasets.put(datasetId, dataset.toBuilder().addRecords(type.getNumber(), pRecord).build());
     }
 
     @Override
@@ -77,9 +73,12 @@ public class ProtoDataHandler implements DataHandler {
         input.getResultList().forEach(result -> {
             PMeasurementInfo info = result.getInfo();
             consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
-            result.getAveragesMap().forEach((dataType, value) -> consumer.acceptResult(DataType.valueOf(dataType), value));
+            result.getAveragesList().forEach(e ->
+                    consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.toString())), e.getAverage()));
         });
 
 
     }
 }
+
+
