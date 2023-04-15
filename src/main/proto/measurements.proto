@@ -3,3 +3,45 @@ package esw;
 
 option java_package = "cz.esw.serialization.proto";
 option java_multiple_files = true;
+
+
+//    private MeasurementInfo info;
+//    private Map<DataType, List<Double>> records;
+
+
+
+message  PRecord{
+  PDataType datatype = 1;
+  repeated double values = 2;
+}
+
+
+message PDataset{
+  PMeasurementInfo info = 1;
+  repeated PRecord records = 2;
+}
+
+enum PDataType {
+  DOWNLOAD = 0;
+  UPLOAD = 1;
+  PING = 2;
+}
+
+// int id, long timestamp, String measurerName
+message PMeasurementInfo{
+  int32 id = 1;
+  int64 timestamp = 2;
+  string measurerName = 3;
+}
+//	private MeasurementInfo info;
+//	private Map<DataType, Double> averages;
+
+message PAverage{
+  PDataType datatype = 1;
+  double average = 2;
+}
+
+message  PResult{
+  PMeasurementInfo info = 1;
+  repeated  PAverage averages = 2;
+}
