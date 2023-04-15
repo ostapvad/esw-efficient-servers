@@ -80,7 +80,8 @@ public class ProtoDataHandler implements DataHandler {
                     consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.toString())), e.getAverage()));
         });
 
-
+        inputStream.close();
+        outputStream.close();
     }
 }
 
