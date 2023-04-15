@@ -2,13 +2,15 @@ package cz.esw.serialization.handler;
 
 import cz.esw.serialization.ResultConsumer;
 import cz.esw.serialization.json.DataType;
-import cz.esw.serialization.proto.*;
+import cz.esw.serialization.proto.PDataset;
+import cz.esw.serialization.proto.PMeasurementInfo;
+import cz.esw.serialization.proto.PRecord;
+import cz.esw.serialization.proto.PResults;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,6 +41,7 @@ public class ProtoDataHandler implements DataHandler {
 
         PDataset.Builder datasetBuilder = PDataset.newBuilder();
         datasetBuilder.setInfo(newDataset);
+//        Map<DataType, List<Double>> records = new EnumMap<>(DataType.class);
 
         datasets.put(datasetId, datasetBuilder.build());
     }
@@ -57,23 +60,26 @@ public class ProtoDataHandler implements DataHandler {
 
     @Override
     public void getResults(ResultConsumer consumer) throws IOException {
-//     TODO   Process values obtained so far and pass the results to the {@code consumer}.
+//        AtomicInteger msgSize = new AtomicInteger();
+        datasets.forEach((a, dataset) -> {
+            try {
+                dataset.writeDelimitedTo(outputStream);
+//                msgSize.addAndGet(dataset.getSerializedSize());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+//        new DataOutputStream(outputStream).writeInt(msgSize.intValue());
 
-        PDatasets message = PDatasets.newBuilder().putAllDatasets(datasets).build();
 
-        message.writeTo(outputStream);
+        PResults input = PResults.parseFrom(inputStream);
 
-        PResults res = PResults.parseFrom(inputStream);
-
-        for (PResult result : res.getResultList()) {
+        input.getResultList().forEach(result -> {
             PMeasurementInfo info = result.getInfo();
             consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
-            List<PAverage> averages = result.getAveragesList();
-            var downAm = averages.get(DataType.DOWNLOAD.getType());
-//averages: [[type]: amount,...] ???
-//            consumer.acceptResult(DataType.DOWNLOAD, downAm);
-//            consumer.acceptResult(DataType.UPLOAD, );
-//            consumer.acceptResult(DataType.PING, );
-        }
+            result.getAveragesMap().forEach((dataType, value) -> consumer.acceptResult(DataType.valueOf(dataType), value));
+        });
+
+
     }
 }
