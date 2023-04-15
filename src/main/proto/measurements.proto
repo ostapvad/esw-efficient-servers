@@ -45,3 +45,7 @@ message  PResult{
   PMeasurementInfo info = 1;
   repeated  PAverage averages = 2;
 }
+
+message PResults {
+  repeated PResult result = 1;
+}
