@@ -95,7 +95,8 @@ public class ProtoDataHandler implements DataHandler {
                     consumer.acceptResult(DataType.getDataType(e.getDatatypeValue()), e.getAverage()));
         });
 
-
+        inputStream.close();
+        outputStream.close();
     }
 }
 //Waiting for message in JSON format...
