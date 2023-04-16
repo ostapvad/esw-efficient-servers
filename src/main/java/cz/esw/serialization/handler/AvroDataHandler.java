@@ -8,6 +8,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
@@ -57,6 +58,10 @@ public class AvroDataHandler implements DataHandler {
         // init data
         ADatasets data = new ADatasets();
         data.setDatasets(new ArrayList<>(datasets.values()));
+        for (ADataset gnida : datasets.values()){
+            System.out.println(gnida.getInfo());
+            System.out.println(gnida.getRecords());
+        }
 
         // write measurements
         BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(new ByteArrayOutputStream(), null);
@@ -65,7 +70,8 @@ public class AvroDataHandler implements DataHandler {
         encoder.flush();
 
         // write msg size
-        int msgSize = new ByteArrayOutputStream().size();
+        int msgSize = data.toByteBuffer().capacity();
+        System.out.println(msgSize);
         DataOutputStream out = new DataOutputStream(outputStream);
         out.writeInt(msgSize);
         out.flush();

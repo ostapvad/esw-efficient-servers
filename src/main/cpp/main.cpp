@@ -53,11 +53,6 @@ void processJSON(tcp::iostream& stream){
     stream << output;
     cout << output;
 }
-
-void processAvro(tcp::iostream& stream){
-
-    throw std::logic_error("TODO: Implement avro");
-}
 int32_t read_int32(tcp::iostream& stream) {
     int32_t value = 0;
     uint8_t byte;
@@ -74,6 +69,13 @@ int32_t read_int32(tcp::iostream& stream) {
     // Convert the integer value to host byte order
     return ntohl(value);
 }
+void processAvro(tcp::iostream& stream){
+    int32_t messageSize = read_int32(stream);
+    std::cout << messageSize << std::endl;
+
+    throw std::logic_error("TODO: Implement avro");
+}
+
 void processProtobuf(tcp::iostream& stream){
     // Nepravilno jobanije volki
     printf("Allo\n");
