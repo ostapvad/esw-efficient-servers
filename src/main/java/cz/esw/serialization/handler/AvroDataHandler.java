@@ -1,19 +1,14 @@
 package cz.esw.serialization.handler;
 
 import cz.esw.serialization.ResultConsumer;
-import cz.esw.serialization.avro.ADataset;
-import cz.esw.serialization.avro.ADatasets;
-import cz.esw.serialization.avro.AMeasurementInfo;
-import cz.esw.serialization.avro.AResults;
+import cz.esw.serialization.avro.*;
 import cz.esw.serialization.json.DataType;
 import org.apache.avro.io.*;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Marek Cuchý (CVUT)
@@ -38,19 +33,34 @@ public class AvroDataHandler implements DataHandler {
 
     @Override
     public void handleNewDataset(int datasetId, long timestamp, String measurerName) {
-        ADataset dataset = new ADataset();
-        dataset.setInfo(new AMeasurementInfo(datasetId, timestamp, measurerName));
-        dataset.setRecords(new HashMap<>());
-        datasets.put(datasetId, dataset);
+        List<ARecord> records = new ArrayList<>();
+        for (var v : ADataType.values()) {
+            var res = ARecord.newBuilder()
+                    .setDatatype(ADataType.valueOf(String.valueOf(v)))
+                    .setValues(Collections.emptyList())
+                    .build();
+            records.add(res);
+        }
+
+        datasets.put(datasetId,
+                ADataset.newBuilder().setInfo(new AMeasurementInfo(datasetId, timestamp, measurerName))
+                        .setRecords(records).build());
+
+//        System.out.println("ssss");
     }
 
     @Override
     public void handleValue(int datasetId, DataType type, double value) {
-        ADataset aDataset = datasets.get(datasetId);
-        if (aDataset == null) {
+        ADataset dataset = datasets.get(datasetId);
+        if (dataset == null) {
             throw new IllegalArgumentException("Dataset with id " + datasetId + " not initialized.");
         }
-        aDataset.getRecords().computeIfAbsent(type.toString(), t -> new ArrayList<>()).add(value);
+        var a = ARecord.newBuilder().
+                setDatatype(ADataType.valueOf(type.toString())).setValues(Collections.singletonList(value)).build();
+        List<ARecord> recs = dataset.getRecords();
+        recs.add(a);
+        dataset.setRecords(recs);
+        datasets.put(datasetId, dataset);
     }
 
     @Override
@@ -72,14 +82,17 @@ public class AvroDataHandler implements DataHandler {
         out.flush();
 
         // process input
-        final BinaryDecoder binaryDecoder = DecoderFactory.get().binaryDecoder(inputStream, null);
+        AResults incomingMessage = new AResults();
+        DatumReader<AResults> datumReader = new SpecificDatumReader<>(AResults.class);
+        BinaryDecoder binaryDecoder = DecoderFactory.get().binaryDecoder(inputStream, null);
+        datumReader.read(incomingMessage, binaryDecoder);
         AResults input = new SpecificDatumReader<>(AResults.class).read(null, binaryDecoder);
 
         //  send results
         input.getResult().forEach(result -> {
-                    AMeasurementInfo info = result.getInfo();
+                    AMeasurementInfo info = result.getMeasurementInfo();
                     //  TODO ya hz jestli tut ne budet problemy s charSeq
-                    consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName().toString());
+                    consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
                     result.getAverages().forEach(e ->
                             consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.toString())), e.getAverage()));
                 }

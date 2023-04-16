@@ -73,7 +73,7 @@
     "name": "AResult",
     "fields": [
       {
-        "name": "info",
+        "name": "measurementInfo",
         "type": "AMeasurementInfo"
       },
       {
@@ -97,12 +97,8 @@
       {
         "name": "records",
         "type": {
-          "name": "records",
-          "type": "map",
-          "values": {
-            "type": "array",
-            "items": "double"
-          }
+          "type": "array",
+          "items": "ARecord"
         }
       }
     ]
