@@ -21,16 +21,21 @@ avro_input = join_paths(avro_dir, 'measurements.avsc')
 # )
 avrogencpp_exe = find_program('avrogencpp', required: true)
 
-avro_gen = generator(
-    avrogencpp_exe,
-    output: ['@BASENAME@.avro.hh'],
-    arguments: ['avrogencpp', '-i', avro_input, '-o', '@BUILD_DIR@', '-n', 'esw'],
-    capture: true,
+# avro_gen = generator(
+#     avrogencpp_exe,
+#     output: ['@BASENAME@.avro.hh'],
+#     arguments: ['avrogencpp', '-i', avro_input, '-o', '@BUILD_DIR@', '@INPUT@', '-n', 'esw'],
+# )
+avro_srcs = custom_target(
+    'avro_gen',
+    output: ['measurements.avro.hh'],
+    input: avro_input,
+    command: [avrogencpp_exe, '-i', avro_input, '-o', '@OUTPUT@', '-n', 'esw_avro'],
 )
 
-avro_srcs = avro_gen.process(avro_input)
 
-
-srcs = ['dataset.cpp', 'main.cpp', 'measurementinfo.cpp', 'result.cpp'] + protbuf_srcs + avro_srcs
-executable('server', srcs,
-  dependencies: [thread_dep, boost_regex_dep, jsoncpp_dep,  protobuf_dep])
+#avro_srcs = avro_gen.process(avro_input)
+avro_dep = meson.get_compiler('cpp').find_library('avrocpp')
+srcs = ['dataset.cpp', 'main.cpp', 'measurementinfo.cpp', 'result.cpp'] + protbuf_srcs  + avro_srcs
+executable('server', srcs ,
+  dependencies: [thread_dep, boost_regex_dep, jsoncpp_dep,  protobuf_dep, avro_dep])

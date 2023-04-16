@@ -11,9 +11,11 @@
 #include "avro/Decoder.hh"
 #include "measurements.avro.hh"
 
-
+#include <avro/Generic.hh>
+#include <avro/Specific.hh>
 using namespace std;
 using boost::asio::ip::tcp;
+using namespace avro;
 
 void processJSON(tcp::iostream& stream){
     Json::Value val;
@@ -71,9 +73,55 @@ int32_t read_int32(tcp::iostream& stream) {
 }
 void processAvro(tcp::iostream& stream){
     int32_t messageSize = read_int32(stream);
+    char *buffer = new char[messageSize];
     std::cout << messageSize << std::endl;
+    stream.read(buffer, messageSize);
 
-    throw std::logic_error("TODO: Implement avro");
+    std::cout << messageSize << std::endl;
+    std::unique_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*) buffer, messageSize);
+    // Create a binary decoder to decode the Avro message
+    avro::DecoderPtr decoder = avro::binaryDecoder();
+
+    // Set the input stream for the decoder
+    decoder->init(*in);
+
+    // Deserialize the Avro message into a GenericDatum
+    esw_avro::ADatasets receivedDatasets;
+    esw_avro::AResults results;
+    avro::decode(*decoder, receivedDatasets);
+    // TODO remove that converter
+    std::map<std::string, esw_avro::ADataType> converter = {
+        {"DOWNLOAD", esw_avro::ADataType::DOWNLOAD},
+        {"UPLOAD", esw_avro::ADataType::UPLOAD},
+        {"PING", esw_avro::ADataType::PING},
+    };
+    for (auto dataset: receivedDatasets.datasets){
+        std::cout <<    dataset.info.id << std::endl;
+        esw_avro::AResult dataset_result;
+        dataset_result.info = dataset.info;
+        for(auto record: dataset.records){
+            double avg = 0;
+            for(auto measured_value: record.second){
+                avg += measured_value;
+            }
+
+            esw_avro::AAverage value_average;
+
+            value_average.datatype = converter[record.first];
+            value_average.average = avg / record.second.size();
+
+
+            dataset_result.averages.push_back(value_average);
+        }
+        results.result.push_back(dataset_result);
+     
+    }
+    avro::OutputStreamPtr out = avro::ostreamOutputStream(stream);
+    avro::EncoderPtr encoder = avro::binaryEncoder();
+    encoder->init(*out);
+    avro::encode(*encoder, results);
+    encoder->flush();
+ 
 }
 
 void processProtobuf(tcp::iostream& stream){
