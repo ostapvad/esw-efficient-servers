@@ -36,19 +36,19 @@ public class ProtoDataHandler implements DataHandler {
                 .setId(datasetId)
                 .setTimestamp(timestamp)
                 .setMeasurerName(measurerName);
+//
+//        List<PRecord> records = new ArrayList<>();
+//        for (Descriptors.EnumValueDescriptor padlo : PDataType.getDescriptor().getValues()) {
+//            PRecord record = PRecord.newBuilder()
+//                    .setDatatype(PDataType.valueOf(padlo))
+//                    .addAllValues(Collections.emptyList())
+//                    .build();
+//            records.add(record);
+//
+//        }
 
-        List<PRecord> records = new ArrayList<>();
-        for (Descriptors.EnumValueDescriptor padlo : PDataType.getDescriptor().getValues()) {
-            PRecord record = PRecord.newBuilder()
-                    .setDatatype(PDataType.valueOf(padlo))
-                    .addAllValues(Collections.emptyList())
-                    .build();
-            records.add(record);
 
-        }
-
-
-        datasets.put(datasetId, PDataset.newBuilder().setInfo(info).addAllRecords(records).build());
+        datasets.put(datasetId, PDataset.newBuilder().setInfo(info).build());
     }
 
     @Override
@@ -57,32 +57,45 @@ public class ProtoDataHandler implements DataHandler {
         if (dataset == null) {
             throw new IllegalArgumentException("Dataset with id " + datasetId + " not initialized.");
         }
-
-        PRecord pRecord = dataset.getRecords(type.getNumber());
-        System.out.println("gnida");
-        datasets.put(datasetId, dataset.toBuilder().addRecords(type.getNumber(), pRecord).build());
+        datasets.put(datasetId, dataset.toBuilder().addRecords(
+                PRecord.newBuilder().setDatatype(PDataType.forNumber(type.getNumber())).setMeasuredValue(value)).build());
+//        PRecord pRecord =  PRecord.newBuilder().setDatatypeValue(type.getNumber()).set.setValues(type.getNumber(), value).build();//dataset.getRecords(type.getNumber());
+//        System.out.println("gnida");
+//        datasets.put(datasetId, dataset.toBuilder().addRecords(pRecord).build());
     }
 
     @Override
     public void getResults(ResultConsumer consumer) throws IOException {
         PDatasets data = PDatasets.newBuilder().addAllDataset(this.datasets.values()).build();
+//        for(PDataset dataset: data.getDatasetList()){
+//            System.out.println(dataset.toString());
+//        }
+//        for(PDataset dataset: data.getDatasetList()){
+//            for(PRecord gnida: dataset.getRecordsList()){
+//                if(gnida.getDatatypeValue() == PDataType.DOWNLOAD_VALUE){
+//                    System.out.println("daaads\n");
+//                }
+//            }
+//        }
         DataOutputStream dos = new DataOutputStream(outputStream);
         dos.writeInt(data.getSerializedSize());
         dos.flush();
         data.writeTo(outputStream);
 
         PResults input = PResults.parseFrom(inputStream);
-
-        input.getResultList().forEach(result -> {
+        List<PResult>tmp = input.getResultList();
+//        for(PResult entry: tmp){
+//            System.out.println(entry.getInfo());
+//            System.out.println(entry.getAveragesList());
+//        }
+        tmp.forEach(result -> {
             PMeasurementInfo info = result.getInfo();
             consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
             result.getAveragesList().forEach(e ->
-                    consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.toString())), e.getAverage()));
+                    consumer.acceptResult(DataType.getDataType(e.getDatatypeValue()), e.getAverage()));
         });
 
         inputStream.close();
         outputStream.close();
     }
 }
-
-
