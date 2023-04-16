@@ -7,6 +7,10 @@
 #include "measurements.pb.h"
 #include <boost/asio.hpp>
 #include <boost/algorithm/string.hpp>
+#include "avro/Encoder.hh"
+#include "avro/Decoder.hh"
+#include "measurements.avro.hh"
+
 
 using namespace std;
 using boost::asio::ip::tcp;
@@ -51,6 +55,7 @@ void processJSON(tcp::iostream& stream){
 }
 
 void processAvro(tcp::iostream& stream){
+
     throw std::logic_error("TODO: Implement avro");
 }
 int32_t read_int32(tcp::iostream& stream) {

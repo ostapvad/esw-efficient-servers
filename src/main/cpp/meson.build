@@ -4,11 +4,33 @@ jsoncpp_dep = dependency('jsoncpp')
 protobuf_dep = dependency('protobuf', required : true)
 protoc = find_program('protoc', required : true)
 proto_dir = join_paths(meson.source_root(), 'src/main/proto')
-gen = generator(protoc, \
+proto_gen = generator(protoc, \
   output    : ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'],
   arguments : ['--proto_path=' + proto_dir, '--cpp_out=@BUILD_DIR@', '@INPUT@'])
-protbuf_srcs = gen.process(join_paths(proto_dir, 'measurements.proto'))
 
-srcs = ['dataset.cpp', 'main.cpp', 'measurementinfo.cpp', 'result.cpp'] + protbuf_srcs
+protbuf_srcs = proto_gen.process(join_paths(proto_dir, 'measurements.proto'))
+
+avro_dir = join_paths(meson.source_root(), 'src/main/avro')
+avro_input = join_paths(avro_dir, 'measurements.avsc')
+
+# avro_codegen = custom_target(
+#     'avro_codegen',
+#     output: ['measurements.hh', 'measurements.cc'],
+#     input: avro_input,
+#     command: ['avrogencpp', '-i', '@INPUT@', '-o', '@OUTDIR@', '-n', 'esw']
+# )
+avrogencpp_exe = find_program('avrogencpp', required: true)
+
+avro_gen = generator(
+    avrogencpp_exe,
+    output: ['@BASENAME@.avro.hh'],
+    arguments: ['avrogencpp', '-i', avro_input, '-o', '@BUILD_DIR@', '-n', 'esw'],
+    capture: true,
+)
+
+avro_srcs = avro_gen.process(avro_input)
+
+
+srcs = ['dataset.cpp', 'main.cpp', 'measurementinfo.cpp', 'result.cpp'] + protbuf_srcs + avro_srcs
 executable('server', srcs,
   dependencies: [thread_dep, boost_regex_dep, jsoncpp_dep,  protobuf_dep])
