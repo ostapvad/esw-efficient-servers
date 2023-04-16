@@ -1,19 +1,14 @@
 package cz.esw.serialization.handler;
 
 import cz.esw.serialization.ResultConsumer;
-import cz.esw.serialization.avro.ADataset;
-import cz.esw.serialization.avro.ADatasets;
-import cz.esw.serialization.avro.AMeasurementInfo;
-import cz.esw.serialization.avro.AResults;
+import cz.esw.serialization.avro.*;
 import cz.esw.serialization.json.DataType;
 import org.apache.avro.io.*;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Marek Cuchý (CVUT)
@@ -40,7 +35,11 @@ public class AvroDataHandler implements DataHandler {
     public void handleNewDataset(int datasetId, long timestamp, String measurerName) {
         ADataset dataset = new ADataset();
         dataset.setInfo(new AMeasurementInfo(datasetId, timestamp, measurerName));
-        dataset.setRecords(new HashMap<>());
+
+        Map<String, List<Double>> records = new HashMap<>();
+        ADataType.getClassSchema().getEnumSymbols().forEach(e -> records.put(e, new LinkedList<>()));
+        dataset.setRecords(records);
+
         datasets.put(datasetId, dataset);
     }
 
@@ -78,8 +77,7 @@ public class AvroDataHandler implements DataHandler {
         //  send results
         input.getResult().forEach(result -> {
                     AMeasurementInfo info = result.getInfo();
-                    //  TODO ya hz jestli tut ne budet problemy s charSeq
-                    consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName().toString());
+                    consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
                     result.getAverages().forEach(e ->
                             consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.toString())), e.getAverage()));
                 }

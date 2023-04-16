@@ -1,8 +1,8 @@
 [
   {
-    "namespace": "cz.esw.serialization.avro",
     "type": "record",
-    "name": "ARecord",
+    "namespace": "cz.esw.serialization.avro",
+    "name": "AAverage",
     "fields": [
       {
         "name": "datatype",
@@ -15,6 +15,21 @@
             "PING"
           ]
         }
+      },
+      {
+        "name": "average",
+        "type": "double"
+      }
+    ]
+  },
+  {
+    "namespace": "cz.esw.serialization.avro",
+    "type": "record",
+    "name": "ARecord",
+    "fields": [
+      {
+        "name": "datatype",
+        "type": "ADataType"
       },
       {
         "name": "values",
@@ -41,29 +56,6 @@
       {
         "name": "measurerName",
         "type": "string"
-      }
-    ]
-  },
-  {
-    "type": "record",
-    "namespace": "cz.esw.serialization.avro",
-    "name": "AAverage",
-    "fields": [
-      {
-        "name": "datatype",
-        "type": {
-          "name": "PDataType",
-          "type": "enum",
-          "symbols": [
-            "DOWNLOAD",
-            "UPLOAD",
-            "PING"
-          ]
-        }
-      },
-      {
-        "name": "average",
-        "type": "double"
       }
     ]
   },
