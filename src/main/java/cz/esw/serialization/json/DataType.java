@@ -17,9 +17,9 @@ public enum DataType {
 
     public static DataType getDataType(int enumNumber) {
         return switch (enumNumber) {
-            case 0 -> DOWNLOAD;
-            case 1 -> UPLOAD;
-            case 2 -> PING;
+            case 1 -> DOWNLOAD;
+            case 2 -> UPLOAD;
+            case 3 -> PING;
             default -> throw new IllegalStateException("Unexpected value: " + enumNumber);
         };
     }

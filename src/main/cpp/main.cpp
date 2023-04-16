@@ -72,14 +72,14 @@ int32_t read_int32(tcp::iostream& stream) {
 void processProtobuf(tcp::iostream& stream){
     // Nepravilno jobanije volki
     printf("Allo\n");
-    string s;
+    
     int32_t messageSize = read_int32(stream);
     char *buffer = new char[messageSize];
     stream.read(buffer, messageSize);
     //std::cout << value << std::endl;
     //getline(stream, s, '\0');
     esw::PDatasets receivedDatasets;
-
+ 
    // std::cout << s << std::endl;
     //esw::PDatasets receiverd_datasets;
 
@@ -87,12 +87,61 @@ void processProtobuf(tcp::iostream& stream){
         std::cerr << "Padlo\n";
 
     }
+    int counter = 0;
+    esw::PResults results;
     for (auto dataset : receivedDatasets.dataset()){
-            std::cout << "Measurement Info: " << dataset.info().measurername() << std::endl;
-    }
+            esw::PResult datasetResult;
+            datasetResult.mutable_info()->CopyFrom(dataset.info());
+            std::cout << "Gnida poslendniaja = " << dataset.records_size()  << std::endl;
+            std::map <esw::PDataType, std::vector<double>> recordsByDataType;
 
+           
+            
+            for(const auto &record: dataset.records()){
+            
+                recordsByDataType[record.datatype()].push_back(record.measured_value());
+
+                // esw::PAverage datatype_avg;
+                // datatype_avg.set_datatype(record.datatype());
+                // double average = 0;
+                // std::string skotina; 
+                // record.SerializeToString(&skotina);
+
+                // std::cout <<  record.second.record_size() << std::endl;
+                
+               
+                // for(auto record_value: record.values()){
+                //     average += record_value;
+                // }
+                // std::cout << "Record size  = " << record.values_size() << " Avg = "<< average <<   std::endl;
+                // datatype_avg.set_average(average);
+                // datasetResult.add_averages()->CopyFrom(datatype_avg);
+
+            }
+            for (const auto& datatypePair : recordsByDataType){
+                esw::PDataType recordDataType = datatypePair.first;
+                esw::PAverage datatype_avg;
+                datatype_avg.set_datatype(recordDataType);
+                double average = 0;
+                for (const auto &record: datatypePair.second){
+                    average += record;
+                }
+                datatype_avg.set_average(average/datatypePair.second.size());
+                datasetResult.add_averages()->CopyFrom(datatype_avg);
+            }
+
+
+            results.add_result()->CopyFrom(datasetResult);
+            
+    }
+    results.SerializeToOstream(&stream);
+    // Spasibo za infu
+    // Do something with the result message
+  // ...
+    //}
+  
    
-    std::cout<< s << std::endl;
+    
   // Handle parsing error
 //   std::cerr << "Error parsing input string" << std::endl;
 //   return;
@@ -103,7 +152,7 @@ void processProtobuf(tcp::iostream& stream){
     // int messageSize = readAndDecodeMessageSize(stream)
     // int message_size = tcp::iostream::read_int32(stream);
     
-    throw std::logic_error("TODO: Implement protobuf");
+   //throw std::logic_error("TODO: Implement protobuf");
 }
 
 int main(int argc, char *argv[]) {

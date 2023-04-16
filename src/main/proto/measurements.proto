@@ -12,7 +12,7 @@ option java_multiple_files = true;
 
 message  PRecord{
   PDataType datatype = 1;
-  repeated double values = 2;
+  double measured_value = 2;
 }
 
 
@@ -22,13 +22,14 @@ message PDataset{
 }
 
 message PDatasets {
-  repeated PDataset dataset =1;
+  repeated PDataset dataset = 1;
 }
 
 enum PDataType {
-  DOWNLOAD = 0;
-  UPLOAD = 1;
-  PING = 2;
+  UNSPECIFIED = 0;
+  DOWNLOAD = 1;
+  UPLOAD = 2;
+  PING = 3;
 }
 
 // int id, long timestamp, String measurerName
