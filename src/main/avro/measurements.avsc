@@ -1,30 +1,27 @@
 [
   {
-    "type": "record",
-    "namespace": "cz.esw.serialization.avro",
-    "name": "AAverage",
-    "fields": [
-      {
-        "name": "datatype",
-        "type": {
-          "name": "ADataType",
-          "type": "string"
-        }
-      },
-      {
-        "name": "average",
-        "type": "double"
-      }
-    ]
-  },
-  {
     "namespace": "cz.esw.serialization.avro",
     "type": "record",
     "name": "ADataType",
     "fields": [
       {
         "name": "datatype",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "record",
+    "namespace": "cz.esw.serialization.avro",
+    "name": "AAverage",
+    "fields": [
+      {
+        "name": "dtype",
         "type": "ADataType"
+      },
+      {
+        "name": "average",
+        "type": "double"
       }
     ]
   },

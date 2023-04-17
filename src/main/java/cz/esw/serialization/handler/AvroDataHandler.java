@@ -86,10 +86,12 @@ public class AvroDataHandler implements DataHandler {
                     AMeasurementInfo info = result.getInfo();
                     consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
                     result.getAverages().forEach(e ->
-                            consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.getDatatype() + 1)), e.getAverage()));
+                    {
+                        var d = DataType.getDataType(Integer.parseInt(e.getDtype().getDatatype()));
+                        consumer.acceptResult(d, e.getAverage());
+                    });
                 }
         );
-
         inputStream.close();
         outputStream.close();
     }
