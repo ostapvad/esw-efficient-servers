@@ -1,7 +1,10 @@
 package cz.esw.serialization.handler;
 
 import cz.esw.serialization.ResultConsumer;
-import cz.esw.serialization.avro.*;
+import cz.esw.serialization.avro.ADataset;
+import cz.esw.serialization.avro.ADatasets;
+import cz.esw.serialization.avro.AMeasurementInfo;
+import cz.esw.serialization.avro.AResults;
 import cz.esw.serialization.json.DataType;
 import org.apache.avro.io.*;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -44,7 +47,6 @@ public class AvroDataHandler implements DataHandler {
         if (aDataset == null) {
             throw new IllegalArgumentException("Dataset with id " + datasetId + " not initialized.");
         }
-        //TODO change to ENUM
         aDataset.getRecords().computeIfAbsent(type.toString(), t -> new ArrayList<>()).add(value);
     }
 
@@ -53,10 +55,6 @@ public class AvroDataHandler implements DataHandler {
         // init data
         ADatasets data = new ADatasets();
         data.setDatasets(new ArrayList<>(datasets.values()));
-        for (ADataset gnida : datasets.values()) {
-            System.out.println(gnida.getInfo());
-            System.out.println(gnida.getRecords());
-        }
 
         // write measurements
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -67,9 +65,7 @@ public class AvroDataHandler implements DataHandler {
 
         // write msg size
         int msgSize = byteArrayOutputStream.size();
-        System.out.println(msgSize);
         DataOutputStream out = new DataOutputStream(outputStream);
-        /// Change
         out.writeInt(msgSize);
         out.flush();
         byteArrayOutputStream.writeTo(out);
@@ -77,20 +73,14 @@ public class AvroDataHandler implements DataHandler {
         // process input
         final BinaryDecoder binaryDecoder = DecoderFactory.get().binaryDecoder(inputStream, null);
         AResults input = new SpecificDatumReader<>(AResults.class).read(null, binaryDecoder);
-        for (AResult result : input.getResult()) {
-            System.out.println(result.getInfo());
-            System.out.println(result.getAverages());
-        }
 
         //  send results
         input.getResult().forEach(result -> {
                     AMeasurementInfo info = result.getInfo();
                     consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
                     result.getAverages().forEach(e ->
-                    {
-                       // var d = DataType.getDataType(   (e.getDtype().getDatatype()));
-                        consumer.acceptResult(DataType.valueOf(e.getDtype().getDatatype()), e.getAverage());
-                    });
+                            consumer.acceptResult(DataType.valueOf(e.getDtype().getDatatype()), e.getAverage())
+                    );
                 }
         );
         inputStream.close();
