@@ -8,18 +8,23 @@
         "name": "datatype",
         "type": {
           "name": "ADataType",
-          "type": "enum",
-          "symbols": [
-            "DOWNLOAD",
-            "UPLOAD",
-            "PING"
-          ],
-          "startFrom": 1
+          "type": "string"
         }
       },
       {
         "name": "average",
         "type": "double"
+      }
+    ]
+  },
+  {
+    "namespace": "cz.esw.serialization.avro",
+    "type": "record",
+    "name": "ADataType",
+    "fields": [
+      {
+        "name": "datatype",
+        "type": "ADataType"
       }
     ]
   },

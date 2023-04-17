@@ -8,7 +8,6 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
@@ -34,15 +33,9 @@ public class AvroDataHandler implements DataHandler {
 
     @Override
     public void handleNewDataset(int datasetId, long timestamp, String measurerName) {
-        ADataset dataset = new ADataset();
-        dataset.setInfo(new AMeasurementInfo(datasetId, timestamp, measurerName));
-
         Map<String, List<Double>> records = new HashMap<>();
-        // TODO change to ENUM
-        //
-        ADataType.getClassSchema().getEnumSymbols().forEach(e -> records.put(e, new LinkedList<>()));
-        dataset.setRecords(records);
-        datasets.put(datasetId, dataset);
+        Arrays.stream(DataType.values()).toList().forEach(e -> records.put(e.toString(), new LinkedList<>()));
+        datasets.put(datasetId, new ADataset(new AMeasurementInfo(datasetId, timestamp, measurerName), records));
     }
 
     @Override
@@ -60,13 +53,13 @@ public class AvroDataHandler implements DataHandler {
         // init data
         ADatasets data = new ADatasets();
         data.setDatasets(new ArrayList<>(datasets.values()));
-        for (ADataset gnida : datasets.values()){
+        for (ADataset gnida : datasets.values()) {
             System.out.println(gnida.getInfo());
             System.out.println(gnida.getRecords());
         }
 
         // write measurements
-        ByteArrayOutputStream byteArrayOutputStream =  new ByteArrayOutputStream();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(byteArrayOutputStream, null);
         DatumWriter<ADatasets> writer = new SpecificDatumWriter<>(ADatasets.class);
         writer.write(data, encoder);
@@ -84,7 +77,7 @@ public class AvroDataHandler implements DataHandler {
         // process input
         final BinaryDecoder binaryDecoder = DecoderFactory.get().binaryDecoder(inputStream, null);
         AResults input = new SpecificDatumReader<>(AResults.class).read(null, binaryDecoder);
-        for(AResult result: input.getResult()){
+        for (AResult result : input.getResult()) {
             System.out.println(result.getInfo());
             System.out.println(result.getAverages());
         }
@@ -93,7 +86,7 @@ public class AvroDataHandler implements DataHandler {
                     AMeasurementInfo info = result.getInfo();
                     consumer.acceptMeasurementInfo(info.getId(), info.getTimestamp(), info.getMeasurerName());
                     result.getAverages().forEach(e ->
-                            consumer.acceptResult(DataType.getDataType(e.getDatatype().ordinal() + 1), e.getAverage()));
+                            consumer.acceptResult(DataType.getDataType(Integer.parseInt(e.getDatatype() + 1)), e.getAverage()));
                 }
         );
 
