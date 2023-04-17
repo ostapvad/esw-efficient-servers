@@ -55,11 +55,10 @@ void processJSON(tcp::iostream& stream){
     stream << output;
     cout << output;
 }
-int32_t read_int32(tcp::iostream& stream) {
+int32_t getMsgSize(tcp::iostream& stream) {
+     // Read the four bytes of the integer value in network byte order
     int32_t value = 0;
     uint8_t byte;
-
-    // Read the four bytes of the integer value in network byte order
     for (int i = 0; i < 4; i++) {
         if (!stream.read((char*)&byte, 1)) {
             // Handle error
@@ -72,14 +71,12 @@ int32_t read_int32(tcp::iostream& stream) {
     return ntohl(value);
 }
 void processAvro(tcp::iostream& stream){
-    int32_t messageSize = read_int32(stream);
+    int32_t messageSize = getMsgSize(stream);
     char *buffer = new char[messageSize];
-    std::cout << messageSize << std::endl;
+    // Read msg to buffer
     stream.read(buffer, messageSize);
-
-    std::cout << messageSize << std::endl;
     std::unique_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*) buffer, messageSize);
-    // Create a binary decoder to decode the Avro message
+    // Create a binary decoder
     avro::DecoderPtr decoder = avro::binaryDecoder();
 
     // Set the input stream for the decoder
@@ -89,15 +86,8 @@ void processAvro(tcp::iostream& stream){
     esw_avro::ADatasets receivedDatasets;
     esw_avro::AResults results;
     avro::decode(*decoder, receivedDatasets);
-    // TODO remove that converter
-    // std::map<std::string, esw_avro::ADataType> converter = {
-    //     {"DOWNLOAD", esw_avro::ADataType::DOWNLOAD},
-    //     {"UPLOAD", esw_avro::ADataType::UPLOAD},
-    //     {"PING", esw_avro::ADataType::PING},
-
-    // };
+    // Compute results
     for (auto dataset: receivedDatasets.datasets){
-        std::cout <<    dataset.info.id << std::endl;
         esw_avro::AResult dataset_result;
         dataset_result.info = dataset.info;
         for(auto record: dataset.records){
@@ -108,16 +98,16 @@ void processAvro(tcp::iostream& stream){
         
             esw_avro::AAverage value_average;
             value_average.dtype.datatype = record.first;
-            // value_average.dtype = 
-            // value_average.datatype = converter[record.first];
             value_average.average = avg / record.second.size();
 
-
+            // push to dataset result
             dataset_result.averages.push_back(value_average);
         }
+        // push to results
         results.result.push_back(dataset_result);
      
     }
+    // send results back
     avro::OutputStreamPtr out = avro::ostreamOutputStream(stream);
     avro::EncoderPtr encoder = avro::binaryEncoder();
     encoder->init(*out);
@@ -127,54 +117,29 @@ void processAvro(tcp::iostream& stream){
 }
 
 void processProtobuf(tcp::iostream& stream){
-    // Nepravilno jobanije volki
-    printf("Allo\n");
     
-    int32_t messageSize = read_int32(stream);
+    int32_t messageSize = getMsgSize(stream);
     char *buffer = new char[messageSize];
+    // Read msg to buffer
     stream.read(buffer, messageSize);
-    //std::cout << value << std::endl;
-    //getline(stream, s, '\0');
     esw::PDatasets receivedDatasets;
- 
-   // std::cout << s << std::endl;
-    //esw::PDatasets receiverd_datasets;
-
+    // Parse from buffer
     if (!receivedDatasets.ParseFromArray(buffer, messageSize)) {
-        std::cerr << "Padlo\n";
+        throw std::logic_error("MESSAGE was not parsed!");
 
     }
-    int counter = 0;
     esw::PResults results;
+    // Compute results
     for (auto dataset : receivedDatasets.dataset()){
             esw::PResult datasetResult;
             datasetResult.mutable_info()->CopyFrom(dataset.info());
-            std::cout << "Gnida poslendniaja = " << dataset.records_size()  << std::endl;
             std::map <esw::PDataType, std::vector<double>> recordsByDataType;
-
-           
-            
+            // Convert to map
             for(const auto &record: dataset.records()){
-            
                 recordsByDataType[record.datatype()].push_back(record.measured_value());
 
-                // esw::PAverage datatype_avg;
-                // datatype_avg.set_datatype(record.datatype());
-                // double average = 0;
-                // std::string skotina; 
-                // record.SerializeToString(&skotina);
-
-                // std::cout <<  record.second.record_size() << std::endl;
-                
-               
-                // for(auto record_value: record.values()){
-                //     average += record_value;
-                // }
-                // std::cout << "Record size  = " << record.values_size() << " Avg = "<< average <<   std::endl;
-                // datatype_avg.set_average(average);
-                // datasetResult.add_averages()->CopyFrom(datatype_avg);
-
             }
+            // Compute per data type
             for (const auto& datatypePair : recordsByDataType){
                 esw::PDataType recordDataType = datatypePair.first;
                 esw::PAverage datatype_avg;
@@ -191,25 +156,8 @@ void processProtobuf(tcp::iostream& stream){
             results.add_result()->CopyFrom(datasetResult);
             
     }
+    // Send output
     results.SerializeToOstream(&stream);
-    // Spasibo za infu
-    // Do something with the result message
-  // ...
-    //}
-  
-   
-    
-  // Handle parsing error
-//   std::cerr << "Error parsing input string" << std::endl;
-//   return;
-// }
-
-
-
-    // int messageSize = readAndDecodeMessageSize(stream)
-    // int message_size = tcp::iostream::read_int32(stream);
-    
-   //throw std::logic_error("TODO: Implement protobuf");
 }
 
 int main(int argc, char *argv[]) {
