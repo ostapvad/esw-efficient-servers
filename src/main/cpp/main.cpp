@@ -90,11 +90,12 @@ void processAvro(tcp::iostream& stream){
     esw_avro::AResults results;
     avro::decode(*decoder, receivedDatasets);
     // TODO remove that converter
-    std::map<std::string, esw_avro::ADataType> converter = {
-        {"DOWNLOAD", esw_avro::ADataType::DOWNLOAD},
-        {"UPLOAD", esw_avro::ADataType::UPLOAD},
-        {"PING", esw_avro::ADataType::PING},
-    };
+    // std::map<std::string, esw_avro::ADataType> converter = {
+    //     {"DOWNLOAD", esw_avro::ADataType::DOWNLOAD},
+    //     {"UPLOAD", esw_avro::ADataType::UPLOAD},
+    //     {"PING", esw_avro::ADataType::PING},
+
+    // };
     for (auto dataset: receivedDatasets.datasets){
         std::cout <<    dataset.info.id << std::endl;
         esw_avro::AResult dataset_result;
@@ -104,10 +105,11 @@ void processAvro(tcp::iostream& stream){
             for(auto measured_value: record.second){
                 avg += measured_value;
             }
-
+        
             esw_avro::AAverage value_average;
-
-            value_average.datatype = converter[record.first];
+            value_average.dtype.datatype = record.first;
+            // value_average.dtype = 
+            // value_average.datatype = converter[record.first];
             value_average.average = avg / record.second.size();
 
 
